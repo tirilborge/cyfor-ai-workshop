@@ -49,6 +49,13 @@ export interface Item {
      * @maxLength 120
      */
   title: string;
+  /** @maxLength 500 */
+  description: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  category: string;
   createdAt: string;
 }
 
@@ -62,6 +69,28 @@ export interface CreateItem {
      * @maxLength 120
      */
   title: string;
+  /** @maxLength 500 */
+  description?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  category?: string;
+}
+
+export interface UpdateItem {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title?: string;
+  /** @maxLength 500 */
+  description?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  category?: string;
 }
 
 export const get = (
@@ -437,4 +466,63 @@ const {mutation: mutationOptions} = options ?
         TContext
       > => {
       return useMutation(getDeleteItemsIdMutationOptions(options), queryClient);
+    }
+
+export const putItemsId = (
+    id: number,
+    updateItem: UpdateItem,
+ signal?: AbortSignal
+) => {
+
+
+      return customClient<Item>(
+      {url: `/items/${id}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: updateItem, signal
+    },
+      );
+    }
+
+
+
+export const getPutItemsIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putItemsId>>, TError,{id: number;data: UpdateItem}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof putItemsId>>, TError,{id: number;data: UpdateItem}, TContext> => {
+
+const mutationKey = ['putItemsId'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putItemsId>>, {id: number;data: UpdateItem}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  putItemsId(id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutItemsIdMutationResult = NonNullable<Awaited<ReturnType<typeof putItemsId>>>
+    export type PutItemsIdMutationBody = UpdateItem
+    export type PutItemsIdMutationError = ErrorType<unknown>
+
+    export const usePutItemsId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putItemsId>>, TError,{id: number;data: UpdateItem}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof putItemsId>>,
+        TError,
+        {id: number;data: UpdateItem},
+        TContext
+      > => {
+      return useMutation(getPutItemsIdMutationOptions(options), queryClient);
     }
