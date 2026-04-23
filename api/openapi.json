@@ -49,6 +49,17 @@
             "maxLength": 120,
             "example": "Build a workshop API"
           },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "A short description of the resource"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "general"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -58,6 +69,8 @@
         "required": [
           "id",
           "title",
+          "description",
+          "category",
           "createdAt"
         ]
       },
@@ -83,11 +96,46 @@
             "minLength": 1,
             "maxLength": 120,
             "example": "Build a workshop API"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "",
+            "example": "A short description"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "default": "general",
+            "example": "general"
           }
         },
         "required": [
           "title"
         ]
+      },
+      "UpdateItem": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "Updated title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Updated description"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "meeting"
+          }
+        }
       }
     },
     "parameters": {}
@@ -135,6 +183,17 @@
       "get": {
         "tags": [
           "Items"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "workshop"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
         ],
         "responses": {
           "200": {
@@ -198,6 +257,46 @@
         "responses": {
           "204": {
             "description": "Remove a persisted item"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Items"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true,
+              "example": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update a persisted item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
           }
         }
       }

@@ -14,6 +14,8 @@ const HealthResponseSchema = z.object({
 const ItemSchema = z.object({
   id: z.number().int().openapi({ example: 1 }),
   title: z.string().min(1).max(120).openapi({ example: 'Build a workshop API' }),
+  description: z.string().max(500).openapi({ example: 'A short description of the resource' }),
+  category: z.string().min(1).max(60).openapi({ example: 'general' }),
   createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00.000Z' })
 }).openapi('Item')
 
@@ -22,8 +24,16 @@ const ItemListResponseSchema = z.object({
 }).openapi('ItemListResponse')
 
 const CreateItemSchema = z.object({
-  title: z.string().trim().min(1).max(120).openapi({ example: 'Build a workshop API' })
+  title: z.string().trim().min(1).max(120).openapi({ example: 'Build a workshop API' }),
+  description: z.string().trim().max(500).default('').openapi({ example: 'A short description' }),
+  category: z.string().trim().min(1).max(60).default('general').openapi({ example: 'general' })
 }).openapi('CreateItem')
+
+const UpdateItemSchema = z.object({
+  title: z.string().trim().min(1).max(120).optional().openapi({ example: 'Updated title' }),
+  description: z.string().trim().max(500).optional().openapi({ example: 'Updated description' }),
+  category: z.string().trim().min(1).max(60).optional().openapi({ example: 'meeting' })
+}).openapi('UpdateItem')
 
 const ItemParamsSchema = z.object({
   id: z.coerce.number().int().positive().openapi({
@@ -67,10 +77,24 @@ const healthRoute = createRoute({
   }
 })
 
+const ItemQuerySchema = z.object({
+  search: z.string().optional().openapi({
+    param: {
+      name: 'search',
+      in: 'query',
+      required: false
+    },
+    example: 'workshop'
+  })
+}).openapi('ItemQuery')
+
 const listItemsRoute = createRoute({
   method: 'get',
   path: '/items',
   tags: ['Items'],
+  request: {
+    query: ItemQuerySchema
+  },
   responses: {
     200: {
       description: 'List persisted items',
@@ -123,9 +147,38 @@ const deleteItemRoute = createRoute({
   }
 })
 
-const toItemResponse = (item: { id: number; title: string; createdAt: Date }) => ({
+const updateItemRoute = createRoute({
+  method: 'put',
+  path: '/items/{id}',
+  tags: ['Items'],
+  request: {
+    params: ItemParamsSchema,
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: UpdateItemSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: 'Update a persisted item',
+      content: {
+        'application/json': {
+          schema: ItemSchema
+        }
+      }
+    }
+  }
+})
+
+const toItemResponse = (item: { id: number; title: string; description: string; category: string; createdAt: Date }) => ({
   id: item.id,
   title: item.title,
+  description: item.description,
+  category: item.category,
   createdAt: item.createdAt.toISOString()
 })
 
@@ -166,7 +219,20 @@ app.openapi(healthRoute, (c) => {
 })
 
 app.openapi(listItemsRoute, async (c) => {
+  const { search } = c.req.valid('query')
+
+  const where = search
+    ? {
+        OR: [
+          { title: { contains: search } },
+          { description: { contains: search } },
+          { category: { contains: search } }
+        ]
+      }
+    : undefined
+
   const items = await prisma.item.findMany({
+    where,
     orderBy: {
       createdAt: 'desc'
     }
@@ -178,10 +244,12 @@ app.openapi(listItemsRoute, async (c) => {
 })
 
 app.openapi(createItemRoute, async (c) => {
-  const { title } = c.req.valid('json')
+  const { title, description, category } = c.req.valid('json')
   const item = await prisma.item.create({
     data: {
-      title
+      title,
+      description: description ?? '',
+      category: category ?? 'general'
     }
   })
 
@@ -198,6 +266,18 @@ app.openapi(deleteItemRoute, async (c) => {
   })
 
   return c.body(null, 204)
+})
+
+app.openapi(updateItemRoute, async (c) => {
+  const { id } = c.req.valid('param')
+  const data = c.req.valid('json')
+
+  const item = await prisma.item.update({
+    where: { id },
+    data
+  })
+
+  return c.json(toItemResponse(item), 200)
 })
 
 export type AppType = typeof app
