@@ -93,11 +93,12 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("general");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const queryClient = useQueryClient();
   const refreshItems = () =>
-    queryClient.invalidateQueries({ queryKey: getGetItemsQueryKey() });
-  const itemsQuery = useGetItems();
+    queryClient.invalidateQueries({ queryKey: ["/items"] });
+  const itemsQuery = useGetItems(search ? { search } : undefined);
   const createItemMutation = usePostItems({
     mutation: {
       onSuccess: async () => {
@@ -206,7 +207,15 @@ export default function App() {
         ) : null}
 
         <section className="rounded-lg border border-pink-200 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-pink-700">Resources</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-medium text-pink-700">Resources</h2>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search resources..."
+              className="w-60 rounded-md border border-pink-300 px-3 py-1.5 text-sm outline-none focus:border-pink-500"
+            />
+          </div>
 
           {itemsQuery.isPending ? <p className="mt-3 text-sm text-pink-600">Loading resources...</p> : null}
 

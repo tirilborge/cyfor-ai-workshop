@@ -184,6 +184,17 @@
         "tags": [
           "Items"
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "workshop"
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List persisted items",

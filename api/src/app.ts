@@ -77,10 +77,24 @@ const healthRoute = createRoute({
   }
 })
 
+const ItemQuerySchema = z.object({
+  search: z.string().optional().openapi({
+    param: {
+      name: 'search',
+      in: 'query',
+      required: false
+    },
+    example: 'workshop'
+  })
+}).openapi('ItemQuery')
+
 const listItemsRoute = createRoute({
   method: 'get',
   path: '/items',
   tags: ['Items'],
+  request: {
+    query: ItemQuerySchema
+  },
   responses: {
     200: {
       description: 'List persisted items',
@@ -205,7 +219,20 @@ app.openapi(healthRoute, (c) => {
 })
 
 app.openapi(listItemsRoute, async (c) => {
+  const { search } = c.req.valid('query')
+
+  const where = search
+    ? {
+        OR: [
+          { title: { contains: search } },
+          { description: { contains: search } },
+          { category: { contains: search } }
+        ]
+      }
+    : undefined
+
   const items = await prisma.item.findMany({
+    where,
     orderBy: {
       createdAt: 'desc'
     }
